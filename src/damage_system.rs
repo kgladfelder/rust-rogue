@@ -1,4 +1,5 @@
-use super::{CombatStats, SufferDamage};
+use super::{CombatStats, Player, SufferDamage};
+use rltk::console;
 use specs::prelude::*;
 
 pub struct DamageSystem {}
@@ -25,13 +26,19 @@ pub fn delete_the_dead(ecs: &mut World) {
     // Using a scope to make the borrow checker happy
     {
         let combat_stats = ecs.read_storage::<CombatStats>();
+        let players = ecs.read_storage::<Player>();
         let entities = ecs.entities();
         for (entity, stats) in (&entities, &combat_stats).join() {
             if stats.hp < 1 {
-                dead.push(entity);
+                let player = players.get(entity);
+                match player {
+                    None => dead.push(entity),
+                    Some(_) => console::log("You are dead"),
+                }
             }
         }
     }
+
     for victim in dead {
         ecs.delete_entity(victim).expect("Unable to delete");
     }
