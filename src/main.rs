@@ -17,8 +17,12 @@ mod monster_ai_system;
 use monster_ai_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
+mod melee_combat_system;
+use melee_combat_system::*;
+mod damage_system;
+use damage_system::*;
 
-// https://bfnightly.bracketproductions.com/chapter_6.html
+// https://bfnightly.bracketproductions.com/chapter_7.html#letting-the-monsters-hit-you-back
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
     Paused,
@@ -36,8 +40,12 @@ impl State {
         vis.run_now(&self.ecs);
         let mut mob = MonsterAI {};
         mob.run_now(&self.ecs);
-        let mut mapindex = MapIndexingSystem{};
+        let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
+        let mut meleecombatsystem = MeleeCombatSystem {};
+        meleecombatsystem.run_now(&self.ecs);
+        let mut damagesystem = DamageSystem {};
+        damagesystem.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -48,6 +56,7 @@ impl GameState for State {
 
         if self.runstate == RunState::Running {
             self.run_systems();
+            damage_system::delete_the_dead(&mut self.ecs);
             self.runstate = RunState::Paused;
         } else {
             self.runstate = player_input(self, ctx);
@@ -84,6 +93,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<CombatStats>();
+    gs.ecs.register::<WantsToMelee>();
+    gs.ecs.register::<SufferDamage>();
 
     let map: Map = Map::new_map_rooms_and_corridors();
     let mut rng = RandomNumberGenerator::new();
@@ -127,6 +139,12 @@ fn main() -> rltk::BError {
                 name: format!("{} #{}", &name, i),
             })
             .with(BlocksTile {})
+            .with(CombatStats {
+                max_hp: 16,
+                hp: 16,
+                defense: 1,
+                power: 4,
+            })
             .build();
     }
 
@@ -151,6 +169,12 @@ fn main() -> rltk::BError {
         })
         .with(Name {
             name: "Player".to_string(),
+        })
+        .with(CombatStats {
+            max_hp: 30,
+            hp: 30,
+            defense: 2,
+            power: 5,
         })
         .build();
 

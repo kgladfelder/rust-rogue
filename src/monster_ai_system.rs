@@ -37,7 +37,6 @@ impl<'a> System<'a> for MonsterAI {
                     pos.x = path.steps[1] as i32 % map.width;
                     pos.y = path.steps[1] as i32 / map.width;
                     viewshed.dirty = true;
-                    console::log(&format!("X: {} Y: {}", pos.x, pos.y))
                 }
             }
         }
