@@ -41,6 +41,8 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     for s in log.entries.iter().rev() {
         if y < 49 {
             ctx.print(2, y, s);
+        } else {
+            break;
         }
         y += 1;
     }
